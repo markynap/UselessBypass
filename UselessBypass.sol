@@ -599,7 +599,7 @@ contract UselessBypass is Context, Ownable {
   // CHANGE THIS -- Address of USELESS Furnace
   address payable public _uselessFurnace = payable(0x405dCC72BF70292Cc23B80F3f01939113cF36A0c);
     // CHANGE THIS -- Address of USELESS LP
-  address payable public _uselessLP = 0x08a6cd8a2e49e3411d13f9364647e1f2ee2c6380;
+  address public _uselessLP = 0x08A6cD8a2E49E3411d13f9364647E1f2ee2C6380;
   // fee in BNB to send USELESS tax free
   uint256 public _bnbFee = 2;
   // how much BNB is needed to send to Furnace
@@ -609,7 +609,7 @@ contract UselessBypass is Context, Ownable {
   IUniswapV2Router02 private uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
   
   // Tells the blockchain how much USELESS was sent from Wallet -> Wallet
-  event UselessBypass(
+  event UsedUselessBypass(
     uint256 uselessAmount,
     address receiver
   );
@@ -629,7 +629,7 @@ contract UselessBypass is Context, Ownable {
     // send USELESS Received to the Recipient tax free
     IERC20(_uselessAddr).transfer(receiver, uselessAmount);
     
-    emit UselessBypass(uselessToSend, receiver);
+    emit UsedUselessBypass(uselessAmount, receiver);
 
     // Send BNB to the Furnace if contract balance hits threshhold
     if (address(this).balance >= bnbThreshold) {
@@ -640,7 +640,7 @@ contract UselessBypass is Context, Ownable {
   /**
    * Calculates the BNB Fee required for a user to pay in order to interact with the bypass
    */ 
-  function calculateBnbFeeForUsingBypass(uint256 uselessAmount) public returns (uint256){
+  function calculateBnbFeeForUsingBypass(uint256 uselessAmount) public view returns (uint256){
       
       // get ratio of BNB/USELESS in LP
       // price(bnb) = bnbQTY/uselessQTY
@@ -693,12 +693,6 @@ contract UselessBypass is Context, Ownable {
    */
   function setBNBThreshold(uint256 nThreshold) public onlyOwner {
     bnbThreshold = nThreshold;
-  }
-  /**
-   * Updates the percentage fee taken out of each useless transfer
-   */
-  function setUselessFee(uint8 newFee) public onlyOwner {
-      _uselessFee = newFee;
   }
   /**
    * Updates the percentage fee of BNB which is removed and stored in the contract
