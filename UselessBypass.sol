@@ -3,8 +3,9 @@ pragma solidity ^0.8.5;
 /**
  * Created June 21 2021
  * Developed by SafemoonMark
- * USELESS Bypass Contract to Send Useless Tax Free between Wallets
+ * USELESS Bypass Contract to deposit Useless from Wallet -> Wallet with only a 2% fee in BNB
  */
+ 
 // SPDX-License-Identifier: Unlicensed
 
 /*
@@ -23,6 +24,75 @@ contract Context {
     this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
     return msg.data;
   }
+}
+
+interface IERC20 {
+
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
 /**
@@ -383,74 +453,6 @@ library SafeMath {
   }
 }
 
-
-interface IUniswapV2Factory {
-    event PairCreated(address indexed token0, address indexed token1, address pair, uint);
-
-    function feeTo() external view returns (address);
-    function feeToSetter() external view returns (address);
-
-    function getPair(address tokenA, address tokenB) external view returns (address pair);
-    function allPairs(uint) external view returns (address pair);
-    function allPairsLength() external view returns (uint);
-
-    function createPair(address tokenA, address tokenB) external returns (address pair);
-
-    function setFeeTo(address) external;
-    function setFeeToSetter(address) external;
-}
-
-interface IUniswapV2Pair {
-    event Approval(address indexed owner, address indexed spender, uint value);
-    event Transfer(address indexed from, address indexed to, uint value);
-
-    function name() external pure returns (string memory);
-    function symbol() external pure returns (string memory);
-    function decimals() external pure returns (uint8);
-    function totalSupply() external view returns (uint);
-    function balanceOf(address owner) external view returns (uint);
-    function allowance(address owner, address spender) external view returns (uint);
-
-    function approve(address spender, uint value) external returns (bool);
-    function transfer(address to, uint value) external returns (bool);
-    function transferFrom(address from, address to, uint value) external returns (bool);
-
-    function DOMAIN_SEPARATOR() external view returns (bytes32);
-    function PERMIT_TYPEHASH() external pure returns (bytes32);
-    function nonces(address owner) external view returns (uint);
-
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
-
-    event Mint(address indexed sender, uint amount0, uint amount1);
-    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
-    event Swap(
-        address indexed sender,
-        uint amount0In,
-        uint amount1In,
-        uint amount0Out,
-        uint amount1Out,
-        address indexed to
-    );
-    event Sync(uint112 reserve0, uint112 reserve1);
-
-    function MINIMUM_LIQUIDITY() external pure returns (uint);
-    function factory() external view returns (address);
-    function token0() external view returns (address);
-    function token1() external view returns (address);
-    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
-    function price0CumulativeLast() external view returns (uint);
-    function price1CumulativeLast() external view returns (uint);
-    function kLast() external view returns (uint);
-
-    function mint(address to) external returns (uint liquidity);
-    function burn(address to) external returns (uint amount0, uint amount1);
-    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;
-    function skim(address to) external;
-    function sync() external;
-
-    function initialize(address, address) external;
-}
-
 interface IUniswapV2Router02 {
     function removeLiquidityETHSupportingFeeOnTransferTokens(
         address token,
@@ -583,10 +585,10 @@ interface IUniswapV2Router02 {
 }
 /**
  * 
- * BNB Sent to this contract will be used to automatically buy/burn USELESS
- * And Emits and Event to the blockchain with how much BNB was used
+ * Transfers Useless from Address -> Address with only a 2% fee in BNB
+ * Which is sent to the furnace when it reaches a certain threshold
  */
-contract UselessFurnace is Context, Ownable {
+contract UselessBypass is Context, Ownable {
     
   using Address for address;
   using SafeMath for uint8;
@@ -594,18 +596,80 @@ contract UselessFurnace is Context, Ownable {
   
   // address of USELESS Smart Contract
   address payable private _uselessAddr = payable(0x2cd2664Ce5639e46c6a3125257361e01d0213657);
-  
-  // fee applied each time contract is used
-  uint256 public _bypassFee = 4;
-  
+  // CHANGE THIS -- Address of USELESS Furnace
+  address payable public _uselessFurnace = payable(0x405dCC72BF70292Cc23B80F3f01939113cF36A0c);
+    // CHANGE THIS -- Address of USELESS LP
+  address payable public _uselessLP = 0x08a6cd8a2e49e3411d13f9364647e1f2ee2c6380;
+  // fee in BNB to send USELESS tax free
+  uint256 public _bnbFee = 2;
+  // how much BNB is needed to send to Furnace
+  uint256 public bnbThreshold = 1 * 10**18;
+
   // Initialize Pancakeswap Router
   IUniswapV2Router02 private uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
   
-  // Tells the blockchain how much BNB was used on every Buy/Burn
-  event UseBypass(
-    uint256 amountSent
+  // Tells the blockchain how much USELESS was sent from Wallet -> Wallet
+  event UselessBypass(
+    uint256 uselessAmount,
+    address receiver
   );
+  // Tells the blockchain how much BNB was sent to Furnace
+  event BNBSentToFurnace(
+    uint256 bnbAmount
+  );
+  
+  function sendUSELESSToWallet(uint256 uselessAmount, address receiver) public onlyOwner{
+      
+    // how much USELESS did we have in this contract already
+    uint256 uselessBalance = IERC20(_uselessAddr).balanceOf(address(this));
+      
+    // cannot send more BNB than we have in the contract
+    require(uselessAmount <= uselessBalance, 'cannot send more than is stored in the contract');
+    
+    // send USELESS Received to the Recipient tax free
+    IERC20(_uselessAddr).transfer(receiver, uselessAmount);
+    
+    emit UselessBypass(uselessToSend, receiver);
 
+    // Send BNB to the Furnace if contract balance hits threshhold
+    if (address(this).balance >= bnbThreshold) {
+        sendToFurnace(bnbThreshold);
+    }
+  }
+  
+  /**
+   * Calculates the BNB Fee required for a user to pay in order to interact with the bypass
+   */ 
+  function calculateBnbFeeForUsingBypass(uint256 uselessAmount) public returns (uint256){
+      
+      // get ratio of BNB/USELESS in LP
+      // price(bnb) = bnbQTY/uselessQTY
+      
+      // fee(bnb) = 2% * price(bnb) * uselessAmount
+
+      uint256 bnbQTY = address(_uselessLP).balance;
+      uint256 uselessQTY = IERC20(_uselessAddr).balanceOf(_uselessLP);
+      require (bnbQTY > 0 && uselessQTY > 0, 'Cannot have an LP Balance of zero');
+      
+      uint256 transferCost = (uselessAmount.mul(bnbQTY)).div(uselessQTY);
+      
+      uint256 denomFee = uint256(100).div(_bnbFee);
+      
+      uint256 bnbFee = transferCost.div(denomFee);
+      
+      return bnbFee;
+  }
+  
+   /** Sends BNB To the Furnace Contract */
+  function sendToFurnace(uint256 bnbAmount) private {
+      
+       // send BNB to Furnace, allowing low level call
+     (bool success, ) = _uselessFurnace.call{ value: bnbAmount }("");
+      require(success, "Address: unable to send value, recipient may have reverted");
+        
+      emit BNBSentToFurnace(bnbAmount);
+  }
+  
   /**
    * @dev Returns the owner of the contract
    */
@@ -618,71 +682,48 @@ contract UselessFurnace is Context, Ownable {
   function getContractBNBBallance() external view returns (uint256) {
     return address(this).balance;
   }
-  
-   /**
-   * 
+  /**
    * Updates the Uniswap Router and Uniswap pairing for ETH In Case of migration
    */
   function setUniswapV2Router(address _uniswapV2Router) public onlyOwner {
     uniswapV2Router = IUniswapV2Router02(_uniswapV2Router);
   }
-
   /**
-   * 
+   * Updates the minimum amount of BNB needed to send to furnace
+   */
+  function setBNBThreshold(uint256 nThreshold) public onlyOwner {
+    bnbThreshold = nThreshold;
+  }
+  /**
+   * Updates the percentage fee taken out of each useless transfer
+   */
+  function setUselessFee(uint8 newFee) public onlyOwner {
+      _uselessFee = newFee;
+  }
+  /**
+   * Updates the percentage fee of BNB which is removed and stored in the contract
+   */
+  function setBNBFee(uint8 newFee) public onlyOwner {
+      _bnbFee = newFee;
+  }
+  /**
    * Updates the Contract Address for USELESS
    */
   function setUSELESSContractAddress(address payable newUselessAddress) public onlyOwner {
     _uselessAddr = newUselessAddress;
   }
-  
   /**
-   * 
-   * Changes the fee taken out of each transfer
+   * Updates the Furnace Address for the USELESS Furnace
    */
-  function setBypassFee(uint256 newFee) public onlyOwner {
-    _bypassFee = newFee;
+  function setUSELESSFurnaceAddress(address payable newUselessFurnace) public onlyOwner {
+    _uselessFurnace = newUselessFurnace;
   }
   
-  /**
-   * The number of BNB that is to be used to purchase and burn USELESS
-   */
-  function calculateBypassAmount(uint256 amount) private view returns (uint256){
-      return amount.mul(_bypassFee.div(100));
+  /** Updates the address of the USELESS/BNB Liquidity Pool*/
+  function setUSELESSLPAddress(address newAddr) public onlyOwner {
+    _uselessLP = newAddr;
   }
-  
-  /**
-   * Use BNB in contract to buy Useless and give it to the recipient address
-   */ 
-  function byPassUseless(uint256 bnbAmount, address recipient) public onlyOwner {
-    
-    // ensure we have enough BNB in the contract to make this Swap
-    require(bnbAmount <= address(this).balance, "Not enough BNB in Contract to make this swap");
-    
-    // Uniswap pair path for BNB -> USELESS
-    address[] memory path = new address[](2);
-    path[0] = uniswapV2Router.WETH();
-    path[1] = _uselessAddr;
-    
-    // Calculate the Fee 
-    uint256 byPassFee = calculateBypassAmount(bnbAmount);
-    
-    // Subtract fee from original transfer amount
-    uint256 transferAmount = bnbAmount.sub(byPassFee);
-    
-    // Swap transferAmount of BNB for USELESS
-    uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: transferAmount}(
-        0, // accept any amount of USELESS
-        path,
-        recipient, // Recipient of USELESS
-        block.timestamp.add(300)
-    );  
-    
-    // Tell Blockchain we used the byPass
-    emit UseBypass(transferAmount);
-      
-  }
-
     //to recieve ETH from uniswapV2Router when swaping
     receive() external payable {}
-    
-}
+  
+}  
