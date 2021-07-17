@@ -642,22 +642,35 @@ contract UselessBypass is Context, Ownable {
    */ 
   function calculateBnbFeeForUsingBypass(uint256 uselessAmount) public view returns (uint256){
       
-      // get ratio of BNB/USELESS in LP
-      // price(bnb) = bnbQTY/uselessQTY
-      
-      // fee(bnb) = 2% * price(bnb) * uselessAmount
-
+      // priceUseless(bnb) = bnbQTY/uselessQTY
+      // fee(bnb) = 2% * priceUseless(bnb) * uselessAmount
       uint256 bnbQTY = address(_uselessLP).balance;
       uint256 uselessQTY = IERC20(_uselessAddr).balanceOf(_uselessLP);
+      // ensure neither of these values are zero
       require (bnbQTY > 0 && uselessQTY > 0, 'Cannot have an LP Balance of zero');
       
-      uint256 transferCost = (uselessAmount.mul(bnbQTY)).div(uselessQTY);
+      // we cannot have bnb/useless as the result is below zero, so we will take the reciprocal
       
-      uint256 denomFee = uint256(100).div(_bnbFee);
+      if (uselessQTY > bnbQTY) {
+        
+        uint256 reciprocal = uselessQTY.div(bnbQTY);
       
-      uint256 bnbFee = transferCost.div(denomFee);
+        // amount of useless we are evaluating in BNB
+        uint256 uFee = uselessAmount.mul(_bnbFee).div(10**2);
       
-      return bnbFee;
+        // calculate fee in bnb needed for this transfer
+        return uFee.div(reciprocal);   
+          
+      } else {
+          
+        // ratio of BNB to USELESS in the pool
+        uint256 ratio = bnbQTY.div(uselessQTY);
+        // amount of useless we are evaluating in BNB
+        uint256 uFee = uselessAmount.mul(_bnbFee).div(10**2);
+        // calculate fee in bnb needed for this transfer
+        return uFee.mul(ratio);
+      
+      }   
   }
   
    /** Sends BNB To the Furnace Contract */
